@@ -2,10 +2,12 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"go/build"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"syscall"
 	"time"
 
@@ -55,7 +57,24 @@ func main() {
 	if goPath == "" {
 		goPath = build.Default.GOPATH
 	}
-	binaryPath := fmt.Sprintf("%s%s", goPath, "/src/github.com/ava-labs/avalanchego/build/avalanchego")
+	p := flag.String("path", "", "avalanchego path")
+	flag.Parse()
+	path := *p
+	var binaryPath string
+	if path != "" {
+		if filepath.IsAbs(path) {
+			binaryPath = filepath.Join(path, "/build/avalanchego")
+		} else {
+			abs, err := filepath.Abs(path)
+			if err != nil {
+				fmt.Println(err)
+				os.Exit(1)
+			}
+			binaryPath = filepath.Join(abs, "/build/avalanchego")
+		}
+	} else {
+		binaryPath = fmt.Sprintf("%s%s", goPath, "/src/github.com/ava-labs/avalanchego/build/avalanchego")
+	}
 	if err := run(log, binaryPath); err != nil {
 		log.Fatal("%s", err)
 		os.Exit(1)
